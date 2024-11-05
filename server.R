@@ -47,9 +47,15 @@ server <- function(input, output, session) {
       for (i in 1:nVars) {
         field_type <- input[[paste0("field_type_", i)]]
         
-        options <- ifelse(field_type == "Options", unlist(strsplit(input[[paste0("option_input_", i)]], ",")), NA)
+        if (field_type == "Options") {
+          strs <- strsplit(input[[paste0("option_input_", i)]], ",")
+          str_new <- paste(unlist(strs), collapse = ", ")
+        }
+        
+        
+        options <- ifelse(field_type == "Options", str_new, NA)
         lowerlimit <- ifelse(field_type == "Numeric" && input[[paste0("range_req_", i)]] == "Yes", input[[paste0("min_value_", i)]], NA)
-        upperlimit <- ifelse(field_type == "Numeric" && input[[paste0("range_req_", i)]] == "Yes", input[[paste0("max_value_", i)]], NA)
+        upperlimit <- ifelse(field_type == "Numeric" && input[[paste0("rage_req_", i)]] == "Yes", input[[paste0("max_value_", i)]], NA)
         
         format <- if (field_type == "Numeric" && input[[paste0("range_req_", i)]] == "Yes") {
           "ranged"
