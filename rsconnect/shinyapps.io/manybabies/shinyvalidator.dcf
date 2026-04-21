@@ -5,6 +5,8 @@ account: manybabies
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 10177952
-bundleId: 9676530
+bundleId: 11886783
 url: https://manybabies.shinyapps.io/shinyvalidator/
 version: 1
+asMultiple: FALSE
+asStatic: FALSE
