@@ -38,7 +38,6 @@ server <- function(input, output, session) {
       cat("\nDataset is valid! All variables match specifications.")
     } else {
       cat("\nThe dataset is not valid. Please review the specifications and the highlighted error log.")
-      highlight_csv_to_xlsx(df, issues, "/Users/abteen/Desktop/issues.xlsx")
     }
   })
   
