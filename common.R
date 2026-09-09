@@ -2,31 +2,93 @@ library(tidyverse)
 library(stringr)
 source("ErrorHandler.R")
 
-studies <- data_frame(file = dir(path = "data_specifications")) %>%
-  mutate(file = str_replace(file, ".yaml", "")) %>%
-  separate(file, into = c("study", "format"))
+studies <- tibble(
+  file = list.files(
+    path = "data_specifications",
+    pattern = "\\.yaml$",
+    full.names = FALSE
+  )
+) |>
+  mutate(
+    file = str_remove(file, "\\.yaml$")
+  ) |>
+  separate(
+    file,
+    into = c("study", "format"),
+    sep = "_",
+    extra = "merge",
+    remove = TRUE
+  )
 
 # Main Validation Function
+
+
 validate_dataset_field <- function(dataset_contents, field) {
+
   if (field$required) {
+
+    # Check that required variable exists
     if (field$field %in% names(dataset_contents)) {
-      if (any(is.na(dataset_contents[[field$field]])) && !field$NA_allowed) {
-        cat(sprintf("Dataset has blank or NA for required variable: '%s'.\n", field$field))
+
+      # Check for missing values
+      if (
+        any(is.na(dataset_contents[[field$field]])) &&
+        !field$NA_allowed
+      ) {
+
+        cat(
+          sprintf(
+            "Dataset has blank or NA for required variable: '%s'.\n",
+            field$field
+          )
+        )
+
         return(list(FALSE, NA))
       }
-      
+
+
+      # Validate according to field type
       if (field$type == "options") {
-        return(ValidateOption(dataset_contents, field))
+
+        return(
+          ValidateOption(
+            dataset_contents,
+            field
+          )
+        )
+
       } else if (field$type == "numeric") {
-        return(ValidateNumeric(dataset_contents, field))
+
+        return(
+          ValidateNumeric(
+            dataset_contents,
+            field
+          )
+        )
+
       } else if (field$type == "string") {
-        return(ValidateString(dataset_contents, field))
+
+        return(
+          ValidateString(
+            dataset_contents,
+            field
+          )
+        )
       }
+
     } else {
-      cat(sprintf("Dataset is missing required variable: '%s'.\n", field$field))
+
+      cat(
+        sprintf(
+          "Dataset is missing required variable: '%s'.\n",
+          field$field
+        )
+      )
+
       return(list(FALSE, NA))
     }
   }
+
   return(list(TRUE, NA))
 }
 
@@ -106,17 +168,35 @@ ValidateString <- function(dataset_contents, field) {
   invalid_value <- c()
   
   if (field$format == "uncapitalized") {
-    has_upper <- grepl("[[:upper:]]", field_contents)
+    
+    non_na_contents <- field_contents[
+      !is.na(field_contents)
+    ]
+    
+    has_upper <- grepl(
+      "[[:upper:]]",
+      non_na_contents
+    )
     
     if (any(has_upper)) {
-      cat(sprintf("Dataset has an uppercase letter in lowercase-only variable '%s'. To view these errors, please download the highlighted errors sheet on the left.\n", field$field))
-      invalid_value <- c(invalid_value, field_contents[has_upper])
+      cat(sprintf(
+        "Dataset has an uppercase letter in lowercase-only variable '%s'. To view these errors, please download the highlighted errors sheet on the left.\n",
+        field$field
+      ))
+      
+      invalid_value <- c(
+        invalid_value,
+        non_na_contents[has_upper]
+      )
     }
   }
   
   if (!is.na(field$lowerlimit)) {
     lowerLimit <- as.numeric(field$lowerlimit)
-    short_strings <- field_contents[nchar(field_contents) < lowerLimit]
+    short_strings <- field_contents[
+      !is.na(field_contents) &
+        nchar(field_contents) < lowerLimit
+    ]
     
     if (length(short_strings) > 0) {
       cat(sprintf("Dataset has inputs shorter than the lower character limit for variable '%s'. To view these errors, please download the highlighted errors sheet on the left.\n", field$field))
@@ -126,7 +206,10 @@ ValidateString <- function(dataset_contents, field) {
   
   if (!is.na(field$upperlimit)) {
     upperLimit <- as.numeric(field$upperlimit)
-    long_strings <- field_contents[nchar(field_contents) > upperLimit]
+    long_strings <- field_contents[
+      !is.na(field_contents) &
+        nchar(field_contents) > upperLimit
+    ]
     
     if (length(long_strings) > 0) {
       cat(sprintf("Dataset has inputs longer than the upper character limit for variable '%s'. To view these errors, please download the highlighted errors sheet on the left.\n", field$field))
